@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_pagination, delete_modal %}
+
+{% block title %}Equipment Inventory - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Equipment & Machines Inventory</h3>
+    <p class="text-secondary small mb-0">Track gym assets, serial numbers, operational health, and maintenance schedules.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('equipment.export_csv') }}" class="btn btn-outline-success btn-sm">
+      <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+    </a>
+    <a href="{{ url_for('equipment.maintenance') }}" class="btn btn-outline-warning btn-sm">
+      <i class="bi bi-tools me-1"></i> Maintenance Logs
+    </a>
+    <a href="{{ url_for('equipment.issues') }}" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-exclamation-triangle me-1"></i> Issues
+    </a>
+    {% if current_user.role_name in ['Admin', 'Manager'] %}
+      <a href="{{ url_for('equipment.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-circle me-1"></i> Register Equipment
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('equipment.index') }}" class="row g-2 align-items-end">
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold text-secondary">Search Asset</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" name="search" class="form-control" placeholder="Machine name or serial number..." value="{{ search }}">
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-secondary">Condition Status</label>
+        <select name="condition" class="form-select form-select-sm">
+          <option value="">All Conditions</option>
+          <option value="Excellent" {% if condition == 'Excellent' %}selected{% endif %}>Excellent</option>
+          <option value="Good" {% if condition == 'Good' %}selected{% endif %}>Good</option>
+          <option value="Maintenance Due" {% if condition == 'Maintenance Due' %}selected{% endif %}>Maintenance Due</option>
+          <option value="Out of Order" {% if condition == 'Out of Order' %}selected{% endif %}>Out of Order</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Asset Name</th>
+          <th>Serial #</th>
+          <th>Category</th>
+          <th>Location / Area</th>
+          <th>Vendor</th>
+          <th>Cost</th>
+          <th>Condition</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for eq in equipment_list %}
+          <tr>
+            <td class="fw-bold">{{ eq.name }}</td>
+            <td><code class="font-monospace text-secondary">{{ eq.serial_number }}</code></td>
+            <td>{{ eq.category.name if eq.category else '-' }}</td>
+            <td>{{ eq.area.name if eq.area else '-' }}</td>
+            <td>{{ eq.vendor.name if eq.vendor else '-' }}</td>
+            <td>PKR {{ "{:,.0f}".format(eq.purchase_price) }}</td>
+            <td>
+              {% if eq.condition_status == 'Excellent' %}
+                <span class="badge bg-success">Excellent</span>
+              {% elif eq.condition_status == 'Good' %}
+                <span class="badge bg-primary">Good</span>
+              {% elif eq.condition_status == 'Maintenance Due' %}
+                <span class="badge bg-warning text-dark">Maintenance Due</span>
+              {% else %}
+                <span class="badge bg-danger">Out of Order</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if current_user.role_name in ['Admin', 'Manager'] %}
+                <a href="{{ url_for('equipment.edit', id=eq.id) }}" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteEquipmentModal{{ eq.id }}">
+                  <i class="bi bi-trash3"></i>
+                </button>
+                {{ delete_modal('deleteEquipmentModal' ~ eq.id, url_for('equipment.delete', id=eq.id), eq.name) }}
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="text-center py-4 text-muted">No equipment records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ render_pagination(pagination, 'equipment.index') }}
+{% endblock %}

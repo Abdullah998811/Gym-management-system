@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_pagination %}
+
+{% block title %}System Audit Logs - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">System Audit Trail</h3>
+    <p class="text-secondary small mb-0">Admin audit trail logging record creations, updates, soft deletions, timestamps, and IP addresses.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('reports.audit_logs') }}" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold text-secondary">Action</label>
+        <select name="action" class="form-select form-select-sm">
+          <option value="">All Actions</option>
+          <option value="CREATE" {% if action == 'CREATE' %}selected{% endif %}>CREATE</option>
+          <option value="UPDATE" {% if action == 'UPDATE' %}selected{% endif %}>UPDATE</option>
+          <option value="DELETE" {% if action == 'DELETE' %}selected{% endif %}>DELETE</option>
+          <option value="LOGIN" {% if action == 'LOGIN' %}selected{% endif %}>LOGIN</option>
+          <option value="LOGOUT" {% if action == 'LOGOUT' %}selected{% endif %}>LOGOUT</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold text-secondary">Table</label>
+        <input type="text" name="table_name" class="form-control form-control-sm" placeholder="e.g. members, invoices..." value="{{ table_name }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-secondary">User</label>
+        <select name="user_id" class="form-select form-select-sm">
+          <option value="">All Users</option>
+          {% for u in users %}
+            <option value="{{ u.id }}" {% if user_id == u.id %}selected{% endif %}>{{ u.full_name }} ({{ u.username }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100">Filter Logs</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0 small">
+      <thead class="table-light">
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Table & Record ID</th>
+          <th>IP Address</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td class="font-monospace text-secondary">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td>
+              <div class="fw-bold">{{ log.user.full_name if log.user else 'System' }}</div>
+              <small class="text-secondary">{{ log.user.role_name if log.user else '-' }}</small>
+            </td>
+            <td>
+              <span class="badge bg-{{ 'success' if log.action == 'CREATE' else ('warning text-dark' if log.action == 'UPDATE' else ('danger' if log.action == 'DELETE' else 'info text-dark')) }}">
+                {{ log.action }}
+              </span>
+            </td>
+            <td>
+              <span class="fw-semibold">{{ log.table_name }}</span>
+              {% if log.record_id %}<span class="badge bg-secondary-subtle text-secondary font-monospace">#{{ log.record_id }}</span>{% endif %}
+            </td>
+            <td><code class="font-monospace text-muted">{{ log.ip_address or '-' }}</code></td>
+            <td style="max-width: 320px;">
+              {% if log.new_values %}
+                <code class="d-inline-block text-truncate" style="max-width: 300px;" title="{{ log.new_values }}">{{ log.new_values }}</code>
+              {% elif log.old_values %}
+                <code class="d-inline-block text-truncate" style="max-width: 300px;" title="{{ log.old_values }}">{{ log.old_values }}</code>
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="text-center py-4 text-muted">No audit logs matching query.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ render_pagination(pagination, 'reports.audit_logs') }}
+{% endblock %}

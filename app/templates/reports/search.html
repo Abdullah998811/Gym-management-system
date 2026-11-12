@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results for "{{ q }}" - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="mb-3">
+  <h3 class="fw-bold mb-0">Global Search Results</h3>
+  <p class="text-secondary small mb-0">Query: "<strong>{{ q }}</strong>"</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Members Found -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Members Found ({{ members | length }})</h6>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for m in members %}
+          <a href="{{ url_for('members.view', id=m.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-bold">{{ m.full_name }}</div>
+              <small class="text-secondary">{{ m.membership_number }} &bull; {{ m.phone }}</small>
+            </div>
+            <span class="badge bg-primary-subtle text-primary">{{ m.branch.name if m.branch else '-' }}</span>
+          </a>
+        {% else %}
+          <div class="p-3 text-muted text-center small">No members matched query.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Classes Found -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-fire text-danger me-2"></i>Gym Classes Found ({{ classes | length }})</h6>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for c in classes %}
+          <a href="{{ url_for('classes.index') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-bold">{{ c.title }}</div>
+              <small class="text-secondary">Instructor: {{ c.trainer.full_name if c.trainer else 'TBD' }}</small>
+            </div>
+            <span class="badge bg-secondary">{{ c.difficulty_level }}</span>
+          </a>
+        {% else %}
+          <div class="p-3 text-muted text-center small">No classes matched query.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Trainers Found -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-person-badge text-warning me-2"></i>Trainers Found ({{ trainers | length }})</h6>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for t in trainers %}
+          <a href="{{ url_for('trainers.index') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-bold">{{ t.full_name }}</div>
+              <small class="text-secondary">{{ t.specialization }}</small>
+            </div>
+            <span class="badge bg-warning text-dark">{{ t.experience_years }} Yrs Exp</span>
+          </a>
+        {% else %}
+          <div class="p-3 text-muted text-center small">No trainers matched query.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoices Found -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-receipt text-success me-2"></i>Invoices Found ({{ invoices | length }})</h6>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for inv in invoices %}
+          <a href="{{ url_for('finance.invoice_view', id=inv.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-bold font-monospace">{{ inv.invoice_number }}</div>
+              <small class="text-secondary">{{ inv.member.full_name }} &bull; {{ inv.issue_date }}</small>
+            </div>
+            <span class="badge bg-success">PKR {{ "{:,.0f}".format(inv.total_amount) }}</span>
+          </a>
+        {% else %}
+          <div class="p-3 text-muted text-center small">No invoices matched query.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

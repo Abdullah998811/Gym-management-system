@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Notifications Center</h3>
+    <p class="text-secondary small mb-0">System alerts, renewal notices, payment reminders, and class bookings.</p>
+  </div>
+  <form method="POST" action="{{ url_for('notifications.mark_all_read') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-check-all me-1"></i> Mark All as Read
+    </button>
+  </form>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="list-group list-group-flush">
+    {% for n in notifications %}
+      <div class="list-group-item p-3 d-flex justify-content-between align-items-center {% if not n.is_read %}bg-body-secondary{% endif %}">
+        <div class="d-flex align-items-start gap-3">
+          <span class="badge bg-{{ n.notification_type }} fs-5 p-2 rounded-circle">
+            <i class="bi bi-bell-fill"></i>
+          </span>
+          <div>
+            <div class="fw-bold fs-6 mb-1">{{ n.title }}</div>
+            <p class="mb-1 text-secondary small">{{ n.message }}</p>
+            <small class="text-muted">{{ n.created_at.strftime('%Y-%m-%d %I:%M %p') }}</small>
+          </div>
+        </div>
+        <div>
+          {% if not n.is_read %}
+            <form method="POST" action="{{ url_for('notifications.mark_read', id=n.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-secondary" title="Mark as read">
+                <i class="bi bi-check2"></i> Mark Read
+              </button>
+            </form>
+          {% else %}
+            <span class="badge bg-secondary-subtle text-secondary">Read</span>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-bell-slash fs-1 d-block mb-2 text-secondary"></i>
+        No notifications to display.
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

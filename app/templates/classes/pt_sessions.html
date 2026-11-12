@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Personal Training - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Personal Training (PT) Sessions</h3>
+    <p class="text-secondary small mb-0">Schedule one-on-one customized personal training sessions with schedule conflict protection.</p>
+  </div>
+  <a href="{{ url_for('classes.index') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i> Classes
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-person-walking text-primary me-2"></i>Schedule PT Session</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('classes.pt_sessions') }}">
+          {{ form.hidden_tag() }}
+          {{ render_field(form.trainer_id) }}
+          {{ render_field(form.member_id) }}
+          <div class="row">
+            <div class="col-6">{{ render_field(form.session_date) }}</div>
+            <div class="col-6">{{ render_field(form.start_time, placeholder="15:00") }}</div>
+          </div>
+          <div class="row">
+            <div class="col-6">{{ render_field(form.duration_minutes) }}</div>
+            <div class="col-6">{{ render_field(form.session_status) }}</div>
+          </div>
+          {{ render_field(form.focus_area, placeholder="e.g. Deadlift Form & Posterior Chain") }}
+          {{ render_field(form.notes, placeholder="Coach notes...") }}
+          <button type="submit" class="btn btn-primary w-100 mt-2">Schedule Session</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Trainer</th>
+              <th>Member</th>
+              <th>Date & Time</th>
+              <th>Focus Area</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pt in sessions %}
+              <tr>
+                <td class="fw-bold">{{ pt.trainer.full_name }}</td>
+                <td>{{ pt.member.full_name }}</td>
+                <td>
+                  <div>{{ pt.session_date }}</div>
+                  <small class="text-secondary font-monospace">{{ pt.start_time }} ({{ pt.duration_minutes }}m)</small>
+                </td>
+                <td>{{ pt.focus_area }}</td>
+                <td>
+                  <span class="badge bg-{{ 'success' if pt.session_status == 'Completed' else ('info text-dark' if pt.session_status == 'Scheduled' else 'secondary') }}">
+                    {{ pt.session_status }}
+                  </span>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="text-center py-4 text-muted">No personal training sessions scheduled.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

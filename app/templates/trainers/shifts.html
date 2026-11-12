@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Shifts - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Shift Management</h3>
+    <p class="text-secondary small mb-0">Define operational shifts and working hour slots across branches.</p>
+  </div>
+  <a href="{{ url_for('trainers.staff') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-people me-1"></i> Staff Directory
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-clock text-primary me-2"></i>Create Work Shift</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('trainers.shifts') }}">
+          {{ form.hidden_tag() }}
+          {{ render_field(form.branch_id) }}
+          {{ render_field(form.name, placeholder="e.g. Morning Shift") }}
+          <div class="row">
+            <div class="col-6">{{ render_field(form.start_time, placeholder="06:00") }}</div>
+            <div class="col-6">{{ render_field(form.end_time, placeholder="14:00") }}</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 mt-2">Create Shift</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Shift Name</th>
+              <th>Branch</th>
+              <th>Hours</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in shifts %}
+              <tr>
+                <td class="fw-bold">{{ s.name }}</td>
+                <td>{{ s.branch.name if s.branch else '-' }}</td>
+                <td><span class="badge bg-secondary-subtle text-secondary font-monospace">{{ s.start_time }} - {{ s.end_time }}</span></td>
+                <td><span class="badge bg-success">Active</span></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center py-4 text-muted">No shifts defined.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

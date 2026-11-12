@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Class Bookings - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Class Reservations & Bookings</h3>
+    <p class="text-secondary small mb-0">Reserve member spots in scheduled fitness sessions with capacity controls and waitlisting.</p>
+  </div>
+  <a href="{{ url_for('classes.index') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i> Classes List
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-bookmark-plus text-primary me-2"></i>Book Member Spot</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('classes.book') }}">
+          {{ form.hidden_tag() }}
+          {{ render_field(form.class_id) }}
+          {{ render_field(form.member_id) }}
+          {{ render_field(form.booking_date) }}
+          <button type="submit" class="btn btn-primary w-100 mt-2">Confirm Booking</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0">Recent Confirmed Bookings</h6>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Class</th>
+              <th>Member</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in bookings %}
+              <tr>
+                <td class="fw-bold">{{ b.gym_class.title }}</td>
+                <td>{{ b.member.full_name }}</td>
+                <td>{{ b.booking_date }}</td>
+                <td>
+                  <span class="badge bg-{{ 'success' if b.booking_status == 'Confirmed' else 'secondary' }}">
+                    {{ b.booking_status }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  {% if b.booking_status == 'Confirmed' %}
+                    <form method="POST" action="{{ url_for('classes.cancel_booking', id=b.id) }}" class="d-inline">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Cancel this class booking?')">
+                        Cancel Spot
+                      </button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="text-center py-4 text-muted">No active bookings found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

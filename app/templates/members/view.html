@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field, delete_modal %}
+
+{% block title %}{{ member.full_name }} - Member Profile{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-0">{{ member.full_name }}</h3>
+    <span class="badge bg-secondary font-monospace">{{ member.membership_number }}</span>
+    <span class="badge bg-primary ms-1">{{ member.branch.name if member.branch else 'Main' }}</span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('members.card_pdf', id=member.id) }}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-file-earmark-pdf me-1"></i> ID Card PDF
+    </a>
+    <a href="{{ url_for('members.edit', id=member.id) }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-pencil me-1"></i> Edit Profile
+    </a>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#renewModal">
+      <i class="bi bi-arrow-repeat me-1"></i> Renew Plan
+    </button>
+    <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#freezeModal">
+      <i class="bi bi-snow me-1"></i> Freeze
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs Navigation -->
+<ul class="nav nav-pills mb-4 gap-2" id="memberTab" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+      <i class="bi bi-person-lines-fill me-1"></i> Overview & Info
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" id="measurements-tab" data-bs-toggle="tab" data-bs-target="#measurements" type="button" role="tab">
+      <i class="bi bi-speedometer me-1"></i> Measurements & BMI Chart
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" id="goals-tab" data-bs-toggle="tab" data-bs-target="#goals" type="button" role="tab">
+      <i class="bi bi-bullseye me-1"></i> Fitness Goals
+    </button>
+  </li>
+  {% if current_user.role_name in ['Admin', 'Manager', 'Trainer', 'Receptionist'] %}
+  <li class="nav-item">
+    <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab">
+      <i class="bi bi-journal-text me-1"></i> Staff Notes
+    </button>
+  </li>
+  {% endif %}
+  <li class="nav-item">
+    <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab">
+      <i class="bi bi-calendar2-check me-1"></i> Attendance Logs
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="memberTabContent">
+  <!-- Tab 1: Overview -->
+  <div class="tab-pane fade show active" id="overview" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0">Active Subscription</h6>
+          </div>
+          <div class="card-body">
+            {% if member.active_membership %}
+              <div class="alert alert-success d-flex align-items-center mb-3">
+                <i class="bi bi-check-circle-fill fs-3 me-3 text-success"></i>
+                <div>
+                  <div class="fw-bold">{{ member.active_membership.plan.name }}</div>
+                  <small>Valid until {{ member.active_membership.end_date }} ({{ member.active_membership.days_remaining }} days left)</small>
+                </div>
+              </div>
+              <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between px-0">
+                  <span class="text-secondary">Billing Duration:</span>
+                  <span class="fw-semibold">{{ member.active_membership.plan.duration_days }} Days</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                  <span class="text-secondary">Amount Paid:</span>
+                  <span class="fw-semibold">PKR {{ "{:,.0f}".format(member.active_membership.price_paid) }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                  <span class="text-secondary">Classes Per Week:</span>
+                  <span class="fw-semibold">{{ member.active_membership.plan.max_classes_per_week }} sessions</span>
+                </li>
+              </ul>
+            {% else %}
+              <div class="alert alert-warning mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> No active membership found. Use the "Renew Plan" button to subscribe.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0">Emergency Contacts</h6>
+          </div>
+          <div class="card-body">
+            {% for ec in member.emergency_contacts %}
+              <div class="border-bottom pb-2 mb-2">
+                <div class="fw-bold">{{ ec.name }} <span class="badge bg-secondary-subtle text-secondary small">{{ ec.relationship }}</span></div>
+                <div class="small text-secondary">{{ ec.phone }}</div>
+              </div>
+            {% else %}
+              <p class="text-muted small mb-0">No emergency contacts recorded.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0">Member Profile Details</h6>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <span class="text-secondary small d-block">Full Name</span>
+                <span class="fw-semibold">{{ member.full_name }}</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-secondary small d-block">Email Address</span>
+                <span class="fw-semibold">{{ member.email }}</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-secondary small d-block">Phone Number</span>
+                <span class="fw-semibold">{{ member.phone }}</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-secondary small d-block">CNIC / ID</span>
+                <span class="fw-semibold font-monospace">{{ member.cnic }}</span>
+              </div>
+              <div class="col-sm-4">
+                <span class="text-secondary small d-block">Date of Birth</span>
+                <span class="fw-semibold">{{ member.dob }}</span>
+              </div>
+              <div class="col-sm-4">
+                <span class="text-secondary small d-block">Gender</span>
+                <span class="fw-semibold">{{ member.gender }}</span>
+              </div>
+              <div class="col-sm-4">
+                <span class="text-secondary small d-block">Blood Group</span>
+                <span class="fw-semibold">{{ member.blood_group or 'Not specified' }}</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-secondary small d-block">Address</span>
+                <span class="fw-semibold">{{ member.profile.address if member.profile else '-' }} ({{ member.profile.city if member.profile else '' }})</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-secondary small d-block">Fitness Level</span>
+                <span class="badge bg-info-subtle text-info">{{ member.profile.fitness_level if member.profile else 'Beginner' }}</span>
+              </div>
+              {% if current_user.role_name != 'Member' or (member.user_id and member.user_id == current_user.id) %}
+              <div class="col-12">
+                <span class="text-secondary small d-block">Medical Conditions / Injuries</span>
+                <span class="fw-semibold">{{ member.profile.medical_conditions or 'None reported' }}</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Measurements & BMI Chart -->
+  <div class="tab-pane fade" id="measurements" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <div class="card shadow-sm">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-rulers me-2"></i>Record New Measurement</h6>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="{{ url_for('members.add_measurement', id=member.id) }}">
+              {{ measurement_form.hidden_tag() }}
+              <div class="row">
+                <div class="col-6">{{ render_field(measurement_form.measurement_date) }}</div>
+                <div class="col-6">{{ render_field(measurement_form.weight_kg) }}</div>
+              </div>
+              <div class="row">
+                <div class="col-6">{{ render_field(measurement_form.height_cm) }}</div>
+                <div class="col-6">{{ render_field(measurement_form.body_fat_pct) }}</div>
+              </div>
+              <div class="row">
+                <div class="col-6">{{ render_field(measurement_form.chest_cm) }}</div>
+                <div class="col-6">{{ render_field(measurement_form.waist_cm) }}</div>
+              </div>
+              <div class="row">
+                <div class="col-6">{{ render_field(measurement_form.hips_cm) }}</div>
+                <div class="col-6">{{ render_field(measurement_form.bicep_cm) }}</div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100 mt-2">
+                <i class="bi bi-plus-circle me-1"></i> Save Measurement
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0">Progress Chart</h6>
+          </div>
+          <div class="card-body">
+            <canvas id="viewBmiChart" style="max-height: 250px;"></canvas>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Weight</th>
+                  <th>Height</th>
+                  <th>BMI</th>
+                  <th>Body Fat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in measurements %}
+                  <tr>
+                    <td>{{ m.measurement_date }}</td>
+                    <td>{{ m.weight_kg }} kg</td>
+                    <td>{{ m.height_cm }} cm</td>
+                    <td><span class="badge bg-primary">{{ m.bmi }}</span></td>
+                    <td>{{ m.body_fat_pct }}%</td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="5" class="text-center text-muted py-3">No measurements logged yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Fitness Goals -->
+  <div class="tab-pane fade" id="goals" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <div class="card shadow-sm">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i>Set Fitness Goal</h6>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="{{ url_for('members.add_goal', id=member.id) }}">
+              {{ goal_form.hidden_tag() }}
+              {{ render_field(goal_form.goal_type) }}
+              {{ render_field(goal_form.target_value) }}
+              {{ render_field(goal_form.current_value) }}
+              {{ render_field(goal_form.target_date) }}
+              <button type="submit" class="btn btn-primary w-100">Save Goal</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="card shadow-sm">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0">Member Fitness Goals</h6>
+          </div>
+          <div class="card-body">
+            {% for g in goals %}
+              <div class="p-3 mb-3 border rounded bg-body-tertiary">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-bold">{{ g.goal_type }}</span>
+                  <span class="badge bg-{{ 'success' if g.achieved else 'secondary' }}">{{ 'Achieved' if g.achieved else 'In Progress' }}</span>
+                </div>
+                <div class="text-secondary small mb-1">Target: <strong>{{ g.target_value }}</strong> (Current: {{ g.current_value or 'N/A' }})</div>
+                <div class="text-muted small">Target Date: {{ g.target_date }}</div>
+              </div>
+            {% else %}
+              <p class="text-muted text-center py-4 mb-0">No fitness goals recorded yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Staff Notes -->
+  {% if current_user.role_name in ['Admin', 'Manager', 'Trainer', 'Receptionist'] %}
+  <div class="tab-pane fade" id="notes" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <div class="card shadow-sm">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-pen me-2"></i>Add Staff / Training Note</h6>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="{{ url_for('members.add_note', id=member.id) }}">
+              {{ note_form.hidden_tag() }}
+              {{ render_field(note_form.note_type) }}
+              {{ render_field(note_form.note_text) }}
+              <button type="submit" class="btn btn-primary w-100">Record Note</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="card shadow-sm">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0">Recorded Notes</h6>
+          </div>
+          <div class="card-body">
+            {% for n in notes %}
+              <div class="border-start border-3 border-primary ps-3 py-2 mb-3 bg-body-tertiary rounded-end">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="badge bg-primary-subtle text-primary">{{ n.note_type }}</span>
+                  <small class="text-muted">{{ n.created_at.strftime('%Y-%m-%d %H:%M') }} by {{ n.author.full_name if n.author else 'Staff' }}</small>
+                </div>
+                <p class="mb-0 small">{{ n.note_text }}</p>
+              </div>
+            {% else %}
+              <p class="text-muted text-center py-4 mb-0">No notes recorded yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tab 5: Attendance Logs -->
+  <div class="tab-pane fade" id="attendance" role="tabpanel">
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Check-In Time</th>
+              <th>Check-Out Time</th>
+              <th>Method</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in recent_attendance %}
+              <tr>
+                <td>{{ a.check_in_time.strftime('%Y-%m-%d') }}</td>
+                <td>{{ a.check_in_time.strftime('%I:%M %p') }}</td>
+                <td>{{ a.check_out_time.strftime('%I:%M %p') if a.check_out_time else '-' }}</td>
+                <td><span class="badge bg-secondary-subtle text-secondary">{{ a.method }}</span></td>
+                <td>
+                  {% if a.check_out_time %}
+                    <span class="badge bg-secondary">Completed</span>
+                  {% else %}
+                    <span class="badge bg-success">Active Session</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="text-center text-muted py-4">No attendance check-ins on file.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Renew Plan Modal -->
+<div class="modal fade" id="renewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="bi bi-arrow-repeat me-2"></i>Renew Membership</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('members.renew', id=member.id) }}">
+        {{ renew_form.hidden_tag() }}
+        <div class="modal-body py-4">
+          {{ render_field(renew_form.plan_id) }}
+          {{ render_field(renew_form.amount_paid) }}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Process Renewal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Freeze Modal -->
+<div class="modal fade" id="freezeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-warning">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title"><i class="bi bi-snow me-2"></i>Freeze Membership</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('members.freeze', id=member.id) }}">
+        {{ freeze_form.hidden_tag() }}
+        <div class="modal-body py-4">
+          <p class="text-secondary small mb-3">Freezing suspends membership days and extends the renewal expiration date.</p>
+          {{ render_field(freeze_form.start_date) }}
+          {{ render_field(freeze_form.end_date) }}
+          {{ render_field(freeze_form.reason) }}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning">Confirm Freeze</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  fetch('/api/analytics/member-measurements/{{ member.id }}')
+    .then(r => r.json())
+    .then(data => {
+      new Chart(document.getElementById('viewBmiChart'), {
+        type: 'line',
+        data: {
+          labels: data.dates,
+          datasets: [
+            {
+              label: 'Weight (kg)',
+              data: data.weights,
+              borderColor: '#0d6efd',
+              backgroundColor: 'rgba(13, 110, 253, 0.1)',
+              yAxisID: 'y'
+            },
+            {
+              label: 'BMI',
+              data: data.bmis,
+              borderColor: '#fd7e14',
+              backgroundColor: 'rgba(253, 126, 20, 0.1)',
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { type: 'linear', display: true, position: 'left' },
+            y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } }
+          }
+        }
+      });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Class Schedule - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Weekly Class Timetable</h3>
+    <p class="text-secondary small mb-0">Room assignments, days of week, and session timings.</p>
+  </div>
+  <a href="{{ url_for('classes.index') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i> Classes List
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-calendar-plus text-primary me-2"></i>Add Class Schedule Slot</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('classes.schedule') }}">
+          {{ form.hidden_tag() }}
+          {{ render_field(form.class_id) }}
+          {{ render_field(form.area_id) }}
+          {{ render_field(form.day_of_week) }}
+          <div class="row">
+            <div class="col-6">{{ render_field(form.start_time) }}</div>
+            <div class="col-6">{{ render_field(form.end_time) }}</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 mt-2">Add Schedule Slot</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Class</th>
+              <th>Day</th>
+              <th>Time</th>
+              <th>Location</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in schedules %}
+              <tr>
+                <td class="fw-bold">{{ s.gym_class.title }}</td>
+                <td><span class="badge bg-primary-subtle text-primary">{{ s.day_of_week }}</span></td>
+                <td class="font-monospace small">{{ s.start_time }} - {{ s.end_time }}</td>
+                <td>{{ s.area.name if s.area else '-' }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center py-4 text-muted">No scheduled slots added yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

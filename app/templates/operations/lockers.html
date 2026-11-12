@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Lockers - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Locker Room Management</h3>
+    <p class="text-secondary small mb-0">Assign lockers to members and monitor occupancy in real time.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-key text-primary me-2"></i>Assign Locker to Member</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('operations.lockers') }}">
+          {{ assign_form.hidden_tag() }}
+          <input type="hidden" name="action" value="assign_locker">
+          {{ render_field(assign_form.locker_id) }}
+          {{ render_field(assign_form.member_id) }}
+          <div class="row">
+            <div class="col-6">{{ render_field(assign_form.start_date) }}</div>
+            <div class="col-6">{{ render_field(assign_form.end_date) }}</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 mt-2">Assign Locker</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-plus-circle text-primary me-2"></i>Add Locker Unit</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('operations.lockers') }}">
+          {{ form.hidden_tag() }}
+          <input type="hidden" name="action" value="create_locker">
+          <div class="row">
+            <div class="col-6">{{ render_field(form.branch_id) }}</div>
+            <div class="col-6">{{ render_field(form.area_id) }}</div>
+          </div>
+          <div class="row">
+            <div class="col-6">{{ render_field(form.locker_number, placeholder="e.g. L-102") }}</div>
+            <div class="col-6">{{ render_field(form.locker_type) }}</div>
+          </div>
+          <button type="submit" class="btn btn-secondary w-100 mt-2">Add Locker</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-transparent py-3">
+    <h6 class="fw-bold mb-0">Active Locker Assignments</h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Locker #</th>
+          <th>Type</th>
+          <th>Assigned Member</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Status</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assignments %}
+          <tr>
+            <td class="fw-bold font-monospace">{{ a.locker.locker_number }}</td>
+            <td><span class="badge bg-secondary-subtle text-secondary">{{ a.locker.locker_type }}</span></td>
+            <td>{{ a.member.full_name }}</td>
+            <td>{{ a.start_date }}</td>
+            <td>{{ a.end_date }}</td>
+            <td><span class="badge bg-success">Active</span></td>
+            <td class="text-end">
+              <form method="POST" action="{{ url_for('operations.locker_release', id=a.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-warning">
+                  <i class="bi bi-unlock me-1"></i>Release Key
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center py-4 text-muted">No active locker assignments.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

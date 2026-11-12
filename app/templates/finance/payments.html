@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_pagination %}
+
+{% block title %}Payments - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Payment Transactions</h3>
+    <p class="text-secondary small mb-0">Record of collected fees, cash inflows and payment methods.</p>
+  </div>
+  <a href="{{ url_for('finance.invoices') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-receipt me-1"></i> Invoices Directory
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Payment ID</th>
+          <th>Invoice #</th>
+          <th>Member</th>
+          <th>Date</th>
+          <th>Method</th>
+          <th>Reference #</th>
+          <th>Amount (PKR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+          <tr>
+            <td class="font-monospace">PAY-{{ p.id }}</td>
+            <td>
+              <a href="{{ url_for('finance.invoice_view', id=p.invoice.id) }}" class="fw-bold text-decoration-none">
+                {{ p.invoice.invoice_number }}
+              </a>
+            </td>
+            <td>{{ p.invoice.member.full_name }}</td>
+            <td>{{ p.payment_date }}</td>
+            <td><span class="badge bg-secondary-subtle text-secondary">{{ p.payment_method.name if p.payment_method else 'Cash' }}</span></td>
+            <td><code>{{ p.transaction_reference or '-' }}</code></td>
+            <td class="fw-bold text-success">PKR {{ "{:,.2f}".format(p.amount) }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center py-4 text-muted">No payments found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ render_pagination(pagination, 'finance.payments') }}
+{% endblock %}

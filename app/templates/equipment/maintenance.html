@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Maintenance Logs - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Equipment Maintenance & Service</h3>
+    <p class="text-secondary small mb-0">Record servicing, repairs, parts replacement and upcoming due dates.</p>
+  </div>
+  <a href="{{ url_for('equipment.index') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i> Assets List
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-tools text-primary me-2"></i>Log Service / Maintenance</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('equipment.maintenance') }}">
+          {{ form.hidden_tag() }}
+          {{ render_field(form.equipment_id) }}
+          <div class="row">
+            <div class="col-6">{{ render_field(form.maintenance_date) }}</div>
+            <div class="col-6">{{ render_field(form.next_due_date) }}</div>
+          </div>
+          <div class="row">
+            <div class="col-6">{{ render_field(form.performed_by, placeholder="e.g. FitTech Care") }}</div>
+            <div class="col-6">{{ render_field(form.cost) }}</div>
+          </div>
+          {{ render_field(form.notes, placeholder="Details of servicing, belts adjusted, lube...") }}
+          <button type="submit" class="btn btn-primary w-100 mt-2">Log Maintenance</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Equipment</th>
+              <th>Serviced On</th>
+              <th>Technician</th>
+              <th>Cost</th>
+              <th>Next Due</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+              <tr>
+                <td>
+                  <div class="fw-bold">{{ r.equipment.name }}</div>
+                  <small class="text-secondary font-monospace">{{ r.equipment.serial_number }}</small>
+                </td>
+                <td>{{ r.maintenance_date }}</td>
+                <td>{{ r.performed_by }}</td>
+                <td class="fw-semibold">PKR {{ "{:,.0f}".format(r.cost) }}</td>
+                <td><span class="badge bg-warning text-dark">{{ r.next_due_date }}</span></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="text-center py-4 text-muted">No maintenance records logged.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

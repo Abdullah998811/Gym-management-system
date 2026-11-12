@@ -1,0 +1,93 @@
+{# Macro to render WTForms input field #}
+{% macro render_field(field, class_="form-control", placeholder="") %}
+  <div class="mb-3">
+    {% if field.type != 'BooleanField' and field.type != 'HiddenField' and field.type != 'SubmitField' %}
+      <label for="{{ field.id }}" class="form-label fw-semibold">
+        {{ field.label.text }}
+        {% if field.flags.required %}<span class="text-danger">*</span>{% endif %}
+      </label>
+    {% endif %}
+
+    {% if field.type == 'BooleanField' %}
+      <div class="form-check form-switch mt-2">
+        {{ field(class_="form-check-input") }}
+        <label class="form-check-label fw-semibold" for="{{ field.id }}">{{ field.label.text }}</label>
+      </div>
+    {% elif field.type == 'SelectField' %}
+      {{ field(class_="form-select " + ("is-invalid" if field.errors else "")) }}
+    {% elif field.type == 'TextAreaField' %}
+      {{ field(class_="form-control " + ("is-invalid" if field.errors else ""), rows="3", placeholder=placeholder or field.label.text) }}
+    {% elif field.type != 'SubmitField' and field.type != 'HiddenField' %}
+      {{ field(class_="form-control " + ("is-invalid" if field.errors else ""), placeholder=placeholder or field.label.text) }}
+    {% endif %}
+
+    {% if field.errors %}
+      <div class="invalid-feedback d-block">
+        {% for error in field.errors %}
+          <div><i class="bi bi-exclamation-circle-fill me-1"></i>{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if field.description %}
+      <div class="form-text text-muted">{{ field.description }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{# Macro to render Bootstrap 5 pagination bar preserving query parameters #}
+{% macro render_pagination(pagination, endpoint) %}
+  {% if pagination.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+      <ul class="pagination justify-content-center">
+        {# Previous page #}
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+          <a class="page-link" href="{% if pagination.has_prev %}{{ url_for(endpoint, **dict(request.args, page=pagination.prev_num)) }}{% else %}#{% endif %}" tabindex="-1" aria-disabled="true">
+            <i class="bi bi-chevron-left"></i> Previous
+          </a>
+        </li>
+
+        {% for p in pagination.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+          {% if p %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for(endpoint, **dict(request.args, page=p)) }}">{{ p }}</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+          {% endif %}
+        {% endfor %}
+
+        {# Next page #}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+          <a class="page-link" href="{% if pagination.has_next %}{{ url_for(endpoint, **dict(request.args, page=pagination.next_num)) }}{% else %}#{% endif %}">
+            Next <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  {% endif %}
+{% endmacro %}
+
+{# Macro to render Delete Confirm Modal with CSRF POST form #}
+{% macro delete_modal(modal_id, action_url, item_name="this item") %}
+  <div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-labelledby="{{ modal_id }}Label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-danger">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="{{ modal_id }}Label"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deletion</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-4">
+          <p class="mb-1 text-secondary">Are you sure you want to delete <strong>{{ item_name }}</strong>?</p>
+          <small class="text-danger fw-bold"><i class="bi bi-info-circle me-1"></i>This will soft-delete the record and remove it from active views.</small>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <form action="{{ action_url }}" method="POST" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger"><i class="bi bi-trash3-fill me-1"></i>Confirm Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}

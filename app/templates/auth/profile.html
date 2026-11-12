@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}My Profile - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+    <li class="breadcrumb-item active" aria-current="page">User Profile</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card shadow-sm text-center p-4">
+      <div class="mx-auto bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; font-size: 2.2rem; font-weight: bold;">
+        {{ current_user.full_name[:1] | upper }}
+      </div>
+      <h4 class="fw-bold mb-1">{{ current_user.full_name }}</h4>
+      <p class="text-secondary mb-2">@{{ current_user.username }}</p>
+      <span class="badge bg-primary px-3 py-2 rounded-pill mx-auto mb-3">{{ current_user.role_name }}</span>
+
+      <ul class="list-group list-group-flush text-start small mt-2">
+        <li class="list-group-item d-flex justify-content-between px-0">
+          <span class="text-secondary">Email:</span>
+          <span class="fw-semibold">{{ current_user.email }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between px-0">
+          <span class="text-secondary">Phone:</span>
+          <span class="fw-semibold">{{ current_user.phone or 'Not provided' }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between px-0">
+          <span class="text-secondary">Branch:</span>
+          <span class="fw-semibold">{{ current_user.branch.name if current_user.branch else 'All Branches' }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between px-0">
+          <span class="text-secondary">Last Login:</span>
+          <span class="fw-semibold">{{ current_user.last_login_at.strftime('%Y-%m-%d %H:%M') if current_user.last_login_at else 'Never' }}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-transparent py-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-person-gear me-2"></i>Account Details</h5>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('auth.profile') }}" method="POST">
+          {{ profile_form.hidden_tag() }}
+          <input type="hidden" name="action" value="update_profile">
+
+          <div class="row">
+            <div class="col-md-6">
+              {{ render_field(profile_form.full_name) }}
+            </div>
+            <div class="col-md-6">
+              {{ render_field(profile_form.email) }}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              {{ render_field(profile_form.phone) }}
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary mt-2">
+            <i class="bi bi-check-circle me-1"></i> Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-key-fill me-2"></i>Change Password</h5>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('auth.profile') }}" method="POST">
+          {{ password_form.hidden_tag() }}
+          <input type="hidden" name="action" value="change_password">
+
+          {{ render_field(password_form.current_password) }}
+          <div class="row">
+            <div class="col-md-6">
+              {{ render_field(password_form.new_password) }}
+            </div>
+            <div class="col-md-6">
+              {{ render_field(password_form.confirm_password) }}
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-outline-danger mt-2">
+            <i class="bi bi-lock me-1"></i> Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

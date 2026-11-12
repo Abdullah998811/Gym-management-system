@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Invoice {{ invoice.invoice_number }} - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Invoice #{{ invoice.invoice_number }}</h3>
+    <span class="badge bg-{{ 'success' if invoice.payment_status == 'Paid' else ('warning text-dark' if invoice.payment_status == 'Partial' else ('danger' if invoice.payment_status == 'Overdue' else 'secondary')) }}">
+      {{ invoice.payment_status.upper() }}
+    </span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('finance.invoices') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Invoices List
+    </a>
+    <a href="{{ url_for('finance.invoice_pdf', id=invoice.id) }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF Receipt
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm p-4">
+      <div class="row mb-4">
+        <div class="col-sm-6">
+          <h5 class="fw-bold text-primary mb-1">TITAN FITNESS & GYM</h5>
+          <p class="text-secondary small mb-0">Billing & Payment Receipt</p>
+        </div>
+        <div class="col-sm-6 text-sm-end">
+          <div class="fw-bold font-monospace">{{ invoice.invoice_number }}</div>
+          <div class="small text-secondary">Issue Date: {{ invoice.issue_date }}</div>
+          <div class="small text-danger fw-bold">Due Date: {{ invoice.due_date }}</div>
+        </div>
+      </div>
+
+      <div class="row mb-4 p-3 bg-body-tertiary rounded">
+        <div class="col-sm-6">
+          <span class="text-secondary small d-block">Billed To:</span>
+          <h6 class="fw-bold mb-1">{{ invoice.member.full_name }}</h6>
+          <div class="small text-secondary">Membership #: {{ invoice.member.membership_number }}</div>
+          <div class="small text-secondary">Phone: {{ invoice.member.phone }}</div>
+          <div class="small text-secondary">Email: {{ invoice.member.email }}</div>
+        </div>
+        <div class="col-sm-6 text-sm-end">
+          <span class="text-secondary small d-block">Branch:</span>
+          <span class="fw-semibold">{{ invoice.member.branch.name if invoice.member.branch else 'Main' }}</span>
+        </div>
+      </div>
+
+      <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Description</th>
+              <th class="text-center" style="width: 70px;">Qty</th>
+              <th class="text-end" style="width: 140px;">Unit Price</th>
+              <th class="text-end" style="width: 140px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for itm in invoice.items %}
+              <tr>
+                <td>{{ itm.description }}</td>
+                <td class="text-center">{{ itm.quantity }}</td>
+                <td class="text-end">PKR {{ "{:,.2f}".format(itm.unit_price) }}</td>
+                <td class="text-end">PKR {{ "{:,.2f}".format(itm.total_price) }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td>Gym Membership & Facilities Fee</td>
+                <td class="text-center">1</td>
+                <td class="text-end">PKR {{ "{:,.2f}".format(invoice.subtotal) }}</td>
+                <td class="text-end">PKR {{ "{:,.2f}".format(invoice.subtotal) }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="3" class="text-end fw-semibold">Subtotal:</td>
+              <td class="text-end">PKR {{ "{:,.2f}".format(invoice.subtotal) }}</td>
+            </tr>
+            {% if invoice.discount_amount > 0 %}
+              <tr>
+                <td colspan="3" class="text-end text-success fw-semibold">Discount:</td>
+                <td class="text-end text-success">- PKR {{ "{:,.2f}".format(invoice.discount_amount) }}</td>
+              </tr>
+            {% endif %}
+            {% if invoice.tax_amount > 0 %}
+              <tr>
+                <td colspan="3" class="text-end fw-semibold">Tax:</td>
+                <td class="text-end">PKR {{ "{:,.2f}".format(invoice.tax_amount) }}</td>
+              </tr>
+            {% endif %}
+            <tr>
+              <td colspan="3" class="text-end fw-bold fs-6">Grand Total:</td>
+              <td class="text-end fw-bold fs-6 text-primary">PKR {{ "{:,.2f}".format(invoice.total_amount) }}</td>
+            </tr>
+            <tr>
+              <td colspan="3" class="text-end fw-semibold text-success">Amount Paid:</td>
+              <td class="text-end text-success">PKR {{ "{:,.2f}".format(invoice.paid_amount) }}</td>
+            </tr>
+            <tr>
+              <td colspan="3" class="text-end fw-bold text-danger">Balance Due:</td>
+              <td class="text-end fw-bold text-danger">PKR {{ "{:,.2f}".format(invoice.balance_due) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Payment History -->
+      <h6 class="fw-bold mb-2">Payment Transaction History</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle small">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Method</th>
+              <th>Reference #</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pay in invoice.payments %}
+              <tr>
+                <td>{{ pay.payment_date }}</td>
+                <td>{{ pay.payment_method.name if pay.payment_method else 'Cash' }}</td>
+                <td><code class="font-monospace text-secondary">{{ pay.transaction_reference or 'N/A' }}</code></td>
+                <td class="fw-bold text-success">PKR {{ "{:,.2f}".format(pay.amount) }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center py-2 text-muted">No payments recorded against this invoice yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Record Payment Card -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-credit-card text-success me-2"></i>Record Payment</h6>
+      </div>
+      <div class="card-body">
+        {% if invoice.balance_due > 0 and current_user.role_name in ['Admin', 'Manager', 'Receptionist'] %}
+          <form method="POST" action="{{ url_for('finance.invoice_view', id=invoice.id) }}">
+            {{ payment_form.hidden_tag() }}
+            {{ render_field(payment_form.invoice_id) }}
+            {{ render_field(payment_form.payment_method_id) }}
+            {{ render_field(payment_form.amount) }}
+            {{ render_field(payment_form.payment_date) }}
+            {{ render_field(payment_form.transaction_reference, placeholder="Cash / Bank Ref #...") }}
+            {{ render_field(payment_form.notes, placeholder="Payment note...") }}
+
+            <button type="submit" class="btn btn-success w-100 mt-2">
+              <i class="bi bi-check2-circle me-1"></i> Record PKR {{ "{:,.2f}".format(invoice.balance_due) }} Payment
+            </button>
+          </form>
+        {% elif invoice.balance_due == 0 %}
+          <div class="alert alert-success text-center py-4 mb-0">
+            <i class="bi bi-patch-check-fill fs-1 text-success d-block mb-2"></i>
+            <h6 class="fw-bold">Invoice Fully Paid</h6>
+            <small class="text-secondary">No outstanding balance due for this invoice.</small>
+          </div>
+        {% else %}
+          <p class="text-muted small">Only staff members can record payments.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

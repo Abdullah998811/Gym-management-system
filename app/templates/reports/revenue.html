@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Revenue Analytics - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Financial Health & Revenue</h3>
+    <p class="text-secondary small mb-0">Aggregate revenue, expenses, profit margins, and ReportLab PDF downloads.</p>
+  </div>
+  <a href="{{ url_for('finance.revenue_pdf') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-file-earmark-pdf me-1"></i> Download Revenue Report PDF
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card shadow-sm p-4 text-center border-top border-4 border-success">
+      <div class="text-secondary small text-uppercase fw-bold mb-1">Total Invoiced Billing</div>
+      <div class="display-6 fw-bold text-success">PKR {{ "{:,.0f}".format(total_invoiced) }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm p-4 text-center border-top border-4 border-danger">
+      <div class="text-secondary small text-uppercase fw-bold mb-1">Total Operational Expenses</div>
+      <div class="display-6 fw-bold text-danger">PKR {{ "{:,.0f}".format(total_expenses) }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm p-4 text-center border-top border-4 border-primary">
+      <div class="text-secondary small text-uppercase fw-bold mb-1">Net Operational Cashflow</div>
+      <div class="display-6 fw-bold text-primary">PKR {{ "{:,.0f}".format(total_invoiced - total_expenses) }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0">Recent Billing Invoices</h6>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 small">
+          <thead class="table-light">
+            <tr>
+              <th>Invoice #</th>
+              <th>Member</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inv in invoices %}
+              <tr>
+                <td><a href="{{ url_for('finance.invoice_view', id=inv.id) }}" class="fw-bold text-decoration-none">{{ inv.invoice_number }}</a></td>
+                <td>{{ inv.member.full_name }}</td>
+                <td class="fw-semibold">PKR {{ "{:,.0f}".format(inv.total_amount) }}</td>
+                <td><span class="badge bg-{{ 'success' if inv.payment_status == 'Paid' else 'secondary' }}">{{ inv.payment_status }}</span></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center py-3 text-muted">No invoices available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0">Recent Expenses</h6>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 small">
+          <thead class="table-light">
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Date</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exp in expenses %}
+              <tr>
+                <td class="fw-bold">{{ exp.title }}</td>
+                <td>{{ exp.category.name if exp.category else '-' }}</td>
+                <td>{{ exp.expense_date }}</td>
+                <td class="fw-bold text-danger">PKR {{ "{:,.0f}".format(exp.amount) }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center py-3 text-muted">No expenses recorded.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

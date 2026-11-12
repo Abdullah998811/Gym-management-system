@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gms_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gym_management
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: gms_web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=production
+      - SECRET_KEY=replace-with-a-secure-secret-key-in-production
+      - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/gym_management
+    command: >
+      sh -c "flask db upgrade &&
+             flask seed &&
+             gunicorn --bind 0.0.0.0:5000 run:app"
+
+volumes:
+  pgdata:

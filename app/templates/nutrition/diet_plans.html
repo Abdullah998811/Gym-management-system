@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Diet Plans - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Diet & Nutrition Plans</h3>
+    <p class="text-secondary small mb-0">Design caloric meal templates and assign personalized diets to members.</p>
+  </div>
+  <a href="{{ url_for('nutrition.index') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i> Meals Directory
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-journal-plus text-primary me-2"></i>Create Diet Plan Template</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('nutrition.diet_plans') }}">
+          {{ form.hidden_tag() }}
+          <input type="hidden" name="action" value="create_plan">
+          {{ render_field(form.title, placeholder="e.g. 2400 kcal Lean Bulking Diet") }}
+          <div class="row">
+            <div class="col-8">{{ render_field(form.goal, placeholder="Muscle Gain & Recovery") }}</div>
+            <div class="col-4">{{ render_field(form.daily_calories) }}</div>
+          </div>
+          {{ render_field(form.description, placeholder="Nutritional guidelines, meal frequency...") }}
+          <button type="submit" class="btn btn-primary w-100 mt-2">Save Diet Plan</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-person-check text-success me-2"></i>Assign Diet to Member</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('nutrition.diet_plans') }}">
+          {{ assign_form.hidden_tag() }}
+          <input type="hidden" name="action" value="assign_plan">
+          {{ render_field(assign_form.member_id) }}
+          {{ render_field(assign_form.diet_plan_id) }}
+          <button type="submit" class="btn btn-success w-100 mt-2">Assign Diet Plan</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-transparent py-3">
+    <h6 class="fw-bold mb-0">Active Diet Plans</h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Plan Title</th>
+          <th>Goal</th>
+          <th>Daily Calories</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dp in plans %}
+          <tr>
+            <td class="fw-bold">{{ dp.title }}</td>
+            <td><span class="badge bg-success-subtle text-success">{{ dp.goal }}</span></td>
+            <td class="fw-bold">{{ dp.daily_calories }} kcal</td>
+            <td class="small text-secondary">{{ dp.description or '-' }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="text-center py-4 text-muted">No diet plans created yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

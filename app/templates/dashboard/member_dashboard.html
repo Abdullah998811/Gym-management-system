@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}My Gym Portal - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-0">Welcome, {{ member.full_name if member else current_user.full_name }}!</h3>
+    <p class="text-secondary small mb-0">Member Portal: Track your membership, workouts, nutrition & progress.</p>
+  </div>
+  {% if member %}
+    <a href="{{ url_for('members.card_pdf', id=member.id) }}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-file-earmark-pdf me-1"></i> Download Member Card
+    </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <!-- Active Plan Card -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-award-fill text-warning me-2"></i>My Membership</h6>
+      </div>
+      <div class="card-body">
+        {% if active_membership %}
+          <div class="mb-3">
+            <span class="badge bg-success mb-2">ACTIVE SUBSCRIPTION</span>
+            <h4 class="fw-bold mb-1">{{ active_membership.plan.name }}</h4>
+            <div class="text-secondary small">Billing: {{ active_membership.plan.plan_type }}</div>
+          </div>
+          <div class="p-3 bg-body-tertiary rounded mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-secondary small">Start Date:</span>
+              <span class="fw-semibold small">{{ active_membership.start_date }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-secondary small">Expires On:</span>
+              <span class="fw-bold text-danger small">{{ active_membership.end_date }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-secondary small">Days Left:</span>
+              <span class="badge bg-primary">{{ active_membership.days_remaining }} days</span>
+            </div>
+          </div>
+        {% else %}
+          <div class="alert alert-warning mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> No active membership found. Please renew at the front desk.
+          </div>
+        {% endif %}
+
+        <div class="text-muted small">
+          <div><strong>Member ID:</strong> {{ member.membership_number if member else 'N/A' }}</div>
+          <div><strong>Branch:</strong> {{ member.branch.name if (member and member.branch) else 'Main Branch' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body Measurements & BMI -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Weight & BMI History</h6>
+        {% if latest_measurement %}
+          <span class="badge bg-info-subtle text-info">Latest BMI: {{ latest_measurement.bmi }} ({{ latest_measurement.weight_kg }} kg)</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <canvas id="memberBmiChart" style="max-height: 220px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Programs & Diets -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-journal-medical text-primary me-2"></i>Current Workout Plan</h6>
+      </div>
+      <div class="card-body">
+        {% if workout_plan %}
+          <h5 class="fw-bold mb-1">{{ workout_plan.workout_plan.title }}</h5>
+          <p class="text-secondary small mb-2">Goal: <strong>{{ workout_plan.workout_plan.goal }}</strong> ({{ workout_plan.workout_plan.duration_weeks }} Weeks)</p>
+          <div class="p-3 bg-body-tertiary rounded small mb-3">
+            {{ workout_plan.workout_plan.description or 'Follow the personalized workout structure prescribed by your trainer.' }}
+          </div>
+        {% else %}
+          <p class="text-muted py-3">No active workout plan assigned. Request your trainer for a routine.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-egg-fried text-warning me-2"></i>Current Nutrition Plan</h6>
+      </div>
+      <div class="card-body">
+        {% if diet_plan %}
+          <h5 class="fw-bold mb-1">{{ diet_plan.diet_plan.title }}</h5>
+          <p class="text-secondary small mb-2">Target: <strong>{{ diet_plan.diet_plan.daily_calories }} kcal/day</strong> ({{ diet_plan.diet_plan.goal }})</p>
+          <div class="p-3 bg-body-tertiary rounded small mb-3">
+            {{ diet_plan.diet_plan.description or 'Adhere to your macro splits and stay properly hydrated.' }}
+          </div>
+        {% else %}
+          <p class="text-muted py-3">No active diet plan assigned. Contact your trainer for dietary advice.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bookings & Attendance History -->
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-bookmark-check-fill text-success me-2"></i>Upcoming Class Bookings</h6>
+        <a href="{{ url_for('classes.book') }}" class="btn btn-sm btn-outline-primary">Book Class</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Class</th>
+              <th>Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in bookings %}
+              <tr>
+                <td class="fw-bold">{{ b.gym_class.title }}</td>
+                <td>{{ b.booking_date }}</td>
+                <td><span class="badge bg-success">{{ b.booking_status }}</span></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3" class="text-center text-muted py-3">No bookings yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>My Attendance Logs</h6>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Check In</th>
+              <th>Check Out</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in recent_attendance %}
+              <tr>
+                <td>{{ a.check_in_time.strftime('%Y-%m-%d') }}</td>
+                <td>{{ a.check_in_time.strftime('%I:%M %p') }}</td>
+                <td>{{ a.check_out_time.strftime('%I:%M %p') if a.check_out_time else '<span class="badge bg-success">In Gym</span>' | safe }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3" class="text-center text-muted py-3">No attendance recorded.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if member %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  fetch('/api/analytics/member-measurements/{{ member.id }}')
+    .then(r => r.json())
+    .then(data => {
+      new Chart(document.getElementById('memberBmiChart'), {
+        type: 'line',
+        data: {
+          labels: data.dates,
+          datasets: [
+            {
+              label: 'Weight (kg)',
+              data: data.weights,
+              borderColor: '#0d6efd',
+              backgroundColor: 'rgba(13, 110, 253, 0.1)',
+              yAxisID: 'y'
+            },
+            {
+              label: 'BMI',
+              data: data.bmis,
+              borderColor: '#fd7e14',
+              backgroundColor: 'rgba(253, 126, 20, 0.1)',
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { type: 'linear', display: true, position: 'left' },
+            y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } }
+          }
+        }
+      });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

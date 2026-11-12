@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_pagination, delete_modal %}
+
+{% block title %}Expenses - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Operational Expenses</h3>
+    <p class="text-secondary small mb-0">Track gym facility rents, utility bills, maintenance charges, and payroll overheads.</p>
+  </div>
+  <a href="{{ url_for('finance.expense_create') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-circle me-1"></i> Record Expense
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('finance.expenses') }}" class="row g-2 align-items-end">
+      <div class="col-md-9">
+        <label class="form-label small fw-semibold text-secondary">Filter by Category</label>
+        <select name="category_id" class="form-select form-select-sm">
+          <option value="">All Expense Categories</option>
+          {% for c in categories %}
+            <option value="{{ c.id }}" {% if category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Title / Purpose</th>
+          <th>Category</th>
+          <th>Branch</th>
+          <th>Date</th>
+          <th>Paid To</th>
+          <th>Amount (PKR)</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exp in expenses %}
+          <tr>
+            <td class="fw-bold">{{ exp.title }}</td>
+            <td><span class="badge bg-secondary-subtle text-secondary">{{ exp.category.name if exp.category else '-' }}</span></td>
+            <td>{{ exp.branch.name if exp.branch else '-' }}</td>
+            <td>{{ exp.expense_date }}</td>
+            <td>{{ exp.paid_to }}</td>
+            <td class="fw-bold text-danger">PKR {{ "{:,.0f}".format(exp.amount) }}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteExpenseModal{{ exp.id }}">
+                <i class="bi bi-trash3"></i>
+              </button>
+              {{ delete_modal('deleteExpenseModal' ~ exp.id, url_for('finance.expense_delete', id=exp.id), exp.title) }}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center py-4 text-muted">No expenses recorded.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ render_pagination(pagination, 'finance.expenses') }}
+{% endblock %}

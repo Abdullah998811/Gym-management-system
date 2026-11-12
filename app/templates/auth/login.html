@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Sign In - Titan Gym Management System{% endblock %}
+
+{% block public_content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-11 col-sm-8 col-md-6 col-lg-4">
+      <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-4 p-sm-5">
+          <div class="text-center mb-4">
+            <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-2">
+              <i class="bi bi-activity fs-1"></i>
+            </div>
+            <h3 class="fw-bold mb-1">Titan Fitness</h3>
+            <p class="text-secondary small">Gym & Health Club Management System</p>
+          </div>
+
+          <form action="{{ url_for('auth.login', next=request.args.get('next', '')) }}" method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            {{ render_field(form.username, placeholder="Username or Email") }}
+            {{ render_field(form.password, placeholder="Enter password") }}
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              {{ form.remember_me(class_="form-check-input") }}
+              <label class="form-check-label small" for="{{ form.remember_me.id }}">Remember me</label>
+              <span class="text-muted small">Auto-lockout: 15m</span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to System
+            </button>
+          </form>
+
+          <div class="mt-4 pt-3 border-top text-center text-muted small">
+            <div><strong>Demo Credentials:</strong></div>
+            <div>Admin: <code>admin</code> / <code>Admin@12345</code></div>
+            <div>Manager: <code>manager</code> / <code>Manager@12345</code></div>
+            <div>Trainer: <code>trainer</code> / <code>Trainer@12345</code></div>
+            <div>Reception: <code>receptionist</code> / <code>Reception@12345</code></div>
+            <div>Member: <code>member</code> / <code>Member@12345</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

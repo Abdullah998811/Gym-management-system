@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_pagination %}
+
+{% block title %}Invoices - Titan Gym{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-0">Invoices & Billing</h3>
+    <p class="text-secondary small mb-0">Membership subscriptions, overdue payment tracking, and receipt generation.</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if current_user.role_name in ['Admin', 'Manager'] %}
+      <a href="{{ url_for('finance.export_csv') }}" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Invoices CSV
+      </a>
+      <a href="{{ url_for('finance.revenue_pdf') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-file-earmark-pdf me-1"></i> Revenue Report PDF
+      </a>
+    {% endif %}
+    {% if current_user.role_name in ['Admin', 'Manager', 'Receptionist'] %}
+      <a href="{{ url_for('finance.invoice_create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-receipt me-1"></i> Generate Invoice
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('finance.invoices') }}" class="row g-2 align-items-end">
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold text-secondary">Search Invoices</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" name="search" class="form-control" placeholder="Invoice # or member name..." value="{{ search }}">
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-secondary">Payment Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All Statuses</option>
+          <option value="Paid" {% if status == 'Paid' %}selected{% endif %}>Paid</option>
+          <option value="Partial" {% if status == 'Partial' %}selected{% endif %}>Partial</option>
+          <option value="Unpaid" {% if status == 'Unpaid' %}selected{% endif %}>Unpaid</option>
+          <option value="Overdue" {% if status == 'Overdue' %}selected{% endif %}>Overdue</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Invoice #</th>
+          <th>Member</th>
+          <th>Issue Date</th>
+          <th>Due Date</th>
+          <th>Total (PKR)</th>
+          <th>Paid (PKR)</th>
+          <th>Balance</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+          <tr>
+            <td>
+              <a href="{{ url_for('finance.invoice_view', id=inv.id) }}" class="fw-bold font-monospace text-decoration-none">
+                {{ inv.invoice_number }}
+              </a>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ inv.member.full_name }}</div>
+              <small class="text-secondary">{{ inv.member.membership_number }}</small>
+            </td>
+            <td>{{ inv.issue_date }}</td>
+            <td>{{ inv.due_date }}</td>
+            <td class="fw-bold">PKR {{ "{:,.0f}".format(inv.total_amount) }}</td>
+            <td class="text-success">PKR {{ "{:,.0f}".format(inv.paid_amount) }}</td>
+            <td class="text-danger">PKR {{ "{:,.0f}".format(inv.balance_due) }}</td>
+            <td>
+              {% if inv.payment_status == 'Paid' %}
+                <span class="badge bg-success">Paid</span>
+              {% elif inv.payment_status == 'Partial' %}
+                <span class="badge bg-warning text-dark">Partial</span>
+              {% elif inv.payment_status == 'Overdue' %}
+                <span class="badge bg-danger">Overdue</span>
+              {% else %}
+                <span class="badge bg-secondary">Unpaid</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{{ url_for('finance.invoice_view', id=inv.id) }}" class="btn btn-sm btn-outline-secondary">
+                View
+              </a>
+              <a href="{{ url_for('finance.invoice_pdf', id=inv.id) }}" class="btn btn-sm btn-outline-primary" title="Download PDF">
+                <i class="bi bi-file-earmark-pdf"></i>
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="9" class="text-center py-4 text-muted">No invoices found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ render_pagination(pagination, 'finance.invoices') }}
+{% endblock %}

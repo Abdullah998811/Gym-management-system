@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}403 Forbidden - Access Denied{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <div class="display-1 text-danger fw-bold"><i class="bi bi-shield-lock-fill"></i> 403</div>
+  <h2 class="mt-3 fw-bold">Access Denied / Forbidden</h2>
+  <p class="text-secondary lead mx-auto" style="max-width: 500px;">
+    You do not possess the required permission or role clearance to access this system module.
+  </p>
+  <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary mt-3">
+    <i class="bi bi-house-door-fill me-1"></i> Return to Dashboard
+  </a>
+</div>
+{% endblock %}
+
+{% block public_content %}
+<div class="container py-5 text-center">
+  <div class="display-1 text-danger fw-bold"><i class="bi bi-shield-lock-fill"></i> 403</div>
+  <h2 class="mt-3 fw-bold">Access Denied</h2>
+  <a href="{{ url_for('auth.login') }}" class="btn btn-primary mt-3">Go to Login</a>
+</div>
+{% endblock %}

@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Titan Gym Management System{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-0">Executive Dashboard</h3>
+    <p class="text-secondary small mb-0">Real-time gym operations, membership statistics, and financial health.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('operations.checkin') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-qr-code-scan me-1"></i> Desk Check-In
+    </a>
+    <a href="{{ url_for('members.create') }}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-person-plus-fill me-1"></i> Register Member
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-secondary small fw-bold text-uppercase">Active Members</div>
+          <div class="fs-3 fw-bold">{{ total_members }}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-people-fill"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-secondary small fw-bold text-uppercase">Today's Check-Ins</div>
+          <div class="fs-3 fw-bold text-success">{{ today_checkins }}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-person-check-fill"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-secondary small fw-bold text-uppercase">Monthly Invoiced</div>
+          <div class="fs-3 fw-bold">PKR {{ "{:,.0f}".format(monthly_revenue) }}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-cash-coin"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-secondary small fw-bold text-uppercase">Expiring Plans</div>
+          <div class="fs-3 fw-bold text-warning">{{ expiring_soon }}</div>
+        </div>
+        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-hourglass-split"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Secondary KPI Alerts -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6 col-xl-4">
+    <div class="card p-3 border-danger-subtle bg-danger-subtle bg-opacity-25">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-octagon-fill fs-3 text-danger me-3"></i>
+        <div>
+          <div class="fw-bold">{{ overdue_invoices }} Overdue Invoices</div>
+          <small class="text-secondary">Requires follow-up by front desk staff</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 col-xl-4">
+    <div class="card p-3 border-warning-subtle bg-warning-subtle bg-opacity-25">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-wrench-adjustable fs-3 text-warning me-3"></i>
+        <div>
+          <div class="fw-bold">{{ maintenance_due }} Equipment Due Maintenance</div>
+          <small class="text-secondary">Inspection scheduled or reported out of order</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-12 col-xl-4">
+    <div class="card p-3 border-info-subtle bg-info-subtle bg-opacity-25">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-lightning-charge-fill fs-3 text-info me-3"></i>
+        <div>
+          <div class="fw-bold">{{ active_classes }} Active Fitness Programs</div>
+          <small class="text-secondary">CrossFit, HIIT, Powerlifting & Yoga schedules</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-graph-up me-2"></i>Financial Trends: Revenue vs. Expenses</h6>
+        <span class="badge bg-secondary-subtle text-secondary">Last 6 Months</span>
+      </div>
+      <div class="card-body">
+        <canvas id="revenueChart" style="max-height: 280px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill me-2"></i>Plan Popularity Distribution</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="planChart" style="max-height: 260px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-person-plus-fill me-2"></i>New Member Acquisition</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="membersChart" style="max-height: 240px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-calendar2-check-fill me-2"></i>Daily Attendance Flow (Past 7 Days)</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="attendanceChart" style="max-height: 240px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activity Tables -->
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Recent Gym Check-Ins</h6>
+        <a href="{{ url_for('operations.checkin') }}" class="btn btn-sm btn-link text-decoration-none">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Member</th>
+              <th>Branch</th>
+              <th>Time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in recent_checkins %}
+              <tr>
+                <td>
+                  <div class="fw-bold">{{ a.member.full_name }}</div>
+                  <div class="text-secondary small">{{ a.member.membership_number }}</div>
+                </td>
+                <td>{{ a.branch.name if a.branch else '-' }}</td>
+                <td>{{ a.check_in_time.strftime('%I:%M %p') }}</td>
+                <td>
+                  {% if a.check_out_time %}
+                    <span class="badge bg-secondary">Checked Out</span>
+                  {% else %}
+                    <span class="badge bg-success">In Gym</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center text-muted py-3">No check-ins logged today yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-receipt me-2"></i>Latest Invoices</h6>
+        <a href="{{ url_for('finance.invoices') }}" class="btn btn-sm btn-link text-decoration-none">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Invoice #</th>
+              <th>Member</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inv in recent_invoices %}
+              <tr>
+                <td><a href="{{ url_for('finance.invoice_view', id=inv.id) }}" class="fw-bold text-decoration-none">{{ inv.invoice_number }}</a></td>
+                <td>{{ inv.member.full_name }}</td>
+                <td>PKR {{ "{:,.0f}".format(inv.total_amount) }}</td>
+                <td>
+                  {% if inv.payment_status == 'Paid' %}
+                    <span class="badge bg-success">Paid</span>
+                  {% elif inv.payment_status == 'Partial' %}
+                    <span class="badge bg-warning text-dark">Partial</span>
+                  {% elif inv.payment_status == 'Overdue' %}
+                    <span class="badge bg-danger">Overdue</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Unpaid</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center text-muted py-3">No invoices generated yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // 1. Revenue & Expense Line Chart
+  fetch('/api/analytics/revenue-monthly')
+    .then(r => r.json())
+    .then(data => {
+      new Chart(document.getElementById('revenueChart'), {
+        type: 'line',
+        data: {
+          labels: data.labels,
+          datasets: [
+            {
+              label: 'Revenue (PKR)',
+              data: data.revenue,
+              borderColor: '#0d6efd',
+              backgroundColor: 'rgba(13, 110, 253, 0.1)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Expenses (PKR)',
+              data: data.expenses,
+              borderColor: '#dc3545',
+              backgroundColor: 'rgba(220, 53, 69, 0.1)',
+              fill: true,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top' } }
+        }
+      });
+    });
+
+  // 2. Plan Distribution Doughnut Chart
+  fetch('/api/analytics/plan-distribution')
+    .then(r => r.json())
+    .then(data => {
+      new Chart(document.getElementById('planChart'), {
+        type: 'doughnut',
+        data: {
+          labels: data.labels,
+          datasets: [{
+            data: data.data,
+            backgroundColor: ['#0d6efd', '#20c997', '#fd7e14', '#6f42c1', '#ffc107']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    });
+
+  // 3. New Members Bar Chart
+  fetch('/api/analytics/members-monthly')
+    .then(r => r.json())
+    .then(data => {
+      new Chart(document.getElementById('membersChart'), {
+        type: 'bar',
+        data: {
+          labels: data.labels,
+          datasets: [{
+            label: 'New Registrations',
+            data: data.counts,
+            backgroundColor: '#0d6efd',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+    });
+
+  // 4. Weekly Attendance Bar Chart
+  fetch('/api/analytics/attendance-weekly')
+    .then(r => r.json())
+    .then(data => {
+      new Chart(document.getElementById('attendanceChart'), {
+        type: 'bar',
+        data: {
+          labels: data.labels,
+          datasets: [{
+            label: 'Check-ins',
+            data: data.counts,
+            backgroundColor: '#198754',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+    });
+});
+</script>
+{% endblock %}

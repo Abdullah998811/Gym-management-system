@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}400 Bad Request - Security Error{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <div class="display-1 text-warning fw-bold"><i class="bi bi-shield-exclamation"></i> 400</div>
+  <h2 class="mt-3 fw-bold">Bad Request / Security Token Invalid</h2>
+  <p class="text-secondary lead mx-auto" style="max-width: 500px;">
+    Your request could not be processed due to a security verification or CSRF token failure. Please refresh and try again.
+  </p>
+  <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary mt-3">
+    <i class="bi bi-house-door-fill me-1"></i> Return to Dashboard
+  </a>
+</div>
+{% endblock %}
+
+{% block public_content %}
+<div class="container py-5 text-center">
+  <div class="display-1 text-warning fw-bold"><i class="bi bi-shield-exclamation"></i> 400</div>
+  <h2 class="mt-3 fw-bold">Bad Request</h2>
+  <p class="text-secondary lead mx-auto" style="max-width: 500px;">
+    The CSRF token was invalid or missing. Please return and reload the page.
+  </p>
+  <a href="{{ url_for('auth.login') }}" class="btn btn-primary mt-3">Go to Login</a>
+</div>
+{% endblock %}
