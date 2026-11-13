@@ -3,7 +3,9 @@ from datetime import timedelta
 from dotenv import load_dotenv
 
 basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-load_dotenv(os.path.join(basedir, '.env'))
+# Only load local .env file in development environment
+if os.getenv('APP_ENV', 'development').strip().lower() == 'development':
+    load_dotenv(os.path.join(basedir, '.env'))
 
 KNOWN_INSECURE_SECRETS = {
     'dev-secret-key-fallback-only-for-local-use-gms-2026',
@@ -16,22 +18,22 @@ KNOWN_INSECURE_SECRETS = {
 }
 
 class Config:
-    APP_ENV = os.getenv('APP_ENV', 'production').strip().lower()
+    APP_ENV = os.getenv('APP_ENV', 'development').strip().lower()
     ENV = APP_ENV
     
-    # DEBUG must default to False; only True when explicit FLASK_DEBUG=1 and NOT production
+    # DEBUG must be False in production and may be True only in development
     flask_debug = os.getenv('FLASK_DEBUG', '0').strip().lower() in ('1', 'true')
-    DEBUG = (flask_debug and APP_ENV != 'production')
+    DEBUG = (flask_debug and APP_ENV == 'development')
 
     secret = os.getenv('SECRET_KEY')
     if APP_ENV == 'production':
-        if not secret or secret.strip() in KNOWN_INSECURE_SECRETS:
+        if not secret or not secret.strip() or secret.strip() in KNOWN_INSECURE_SECRETS:
             raise RuntimeError(
                 "CRITICAL ERROR: SECRET_KEY must be set to a strong random value in production environment! "
                 "Generate one with: python -c 'import secrets; print(secrets.token_hex(32))'"
             )
     else:
-        if not secret:
+        if not secret or not secret.strip():
             secret = 'dev-secret-key-fallback-only-for-local-use-gms-2026'
     SECRET_KEY = secret
 
@@ -44,7 +46,7 @@ class Config:
     else:
         instance_dir = os.path.join(basedir, 'instance')
         os.makedirs(instance_dir, exist_ok=True)
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(instance_dir, 'gym_management.db')}"
+        SQLALCHEMY_DATABASE_URI = "sqlite:///gym_management.db"
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {

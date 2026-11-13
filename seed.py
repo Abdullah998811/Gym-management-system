@@ -32,10 +32,9 @@ def run_seed(reset=False):
 def seed_database(reset=False):
     app = create_app()
     with app.app_context():
-        if app.config.get('APP_ENV') == 'production':
-            raise RuntimeError("CRITICAL: Database seeding is strictly disabled in production environments!")
-
         if reset:
+            if app.config.get('APP_ENV') == 'production':
+                raise RuntimeError("CRITICAL: Database reset is strictly disabled in production environments!")
             print("Reset flag provided. Dropping existing tables and recreating schema...")
             db.drop_all()
             db.create_all()

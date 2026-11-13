@@ -13,6 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ENV FLASK_APP=run.py
 EXPOSE 5000
-
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "run:app"]
+CMD ["sh", "-c", "flask --app run.py seed && gunicorn --bind 0.0.0.0:${PORT:-5000} run:app"]
